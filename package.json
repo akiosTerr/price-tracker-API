@@ -1,9 +1,9 @@
 {
-  "name": "js-api-base",
+  "name": "price-tracker-api",
   "version": "1.0.0",
-  "description": "js api boilerplate",
+  "description": "api for fetching prices",
   "main": "app.js",
-  "repository": "https://github.com/akiosTerr/js-api-base",
+  "repository": "https://github.com/akiosTerr/price-tracker-API.git",
   "author": "akiosTerr",
   "license": "MIT",
   "scripts": {
@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "puppeteer": "^4.0.0"
   },
   "devDependencies": {
     "eslint": "^7.2.0",
