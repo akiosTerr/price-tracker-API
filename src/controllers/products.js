@@ -1,24 +1,83 @@
 const knex = require('../database/connection');
+const ClapScrap = require('../lib/ClapScrap');
 
-const show = async (req, res) => {
+const CS = new ClapScrap(require('../data/UA.json').userAgent);
+
+const index = async (req, res) => {
 	const products = await knex('products').select('*');
 
 	return res.json(products);
 };
 
-const getPriceHandler = async (req, res) => {
+const show = async (req, res) => {
 	const { id } = req.params;
 
-	const priceHandler = await knex('products')
-		.select('priceHandler')
+	const data = await knex('products')
+		.select('priceHandler', 'link')
 		.where('id', id)
 		.first();
 
-	if (!priceHandler) {
+	if (!data) {
 		return res.status(400).json({ error: 'product not found' });
 	}
 
-	return res.json(priceHandler);
+	return res.json(data);
+};
+
+const getprice = async (req, res) => {
+	const { id } = req.params;
+
+	const trx = await knex.transaction();
+
+	const data = await trx('products')
+		.select('priceHandler', 'link')
+		.where('id', id)
+		.first();
+
+	if (!data) {
+		return res.status(400).json({ error: 'product not found' });
+	}
+
+	const { page, response } = await CS.launchBot(data.link);
+	const status = response.headers().status;
+
+	if (status !== '200') {
+		return res.json({ 'http request error': status });
+	}
+
+	const price = await CS.getText(page, data.priceHandler);
+
+	if (!price) {
+		return res.json({ error: 'element not found' });
+	}
+
+	const price_record_item = await trx('price_record')
+		.where('product_id', id)
+		.orderBy('createdAt', 'desc')
+		.first()
+		.select('price');
+
+	if (!price_record_item) {
+		console.log('empty price list, posting first price...');
+		const new_price = { product_id: id, price };
+		console.log(new_price);
+		await trx('price_record').insert(new_price);
+		trx.commit();
+		return res.json(new_price);
+	}
+
+	const lastPrice = price_record_item.price;
+
+	if (lastPrice !== price) {
+		console.log('price is different, posting new price...');
+		const new_price = { product_id: id, price };
+		console.log(new_price);
+		await trx('price_record').insert(new_price);
+		trx.commit();
+		return res.json(new_price);
+	}
+	console.log({ lastPrice, price });
+	return res.json({ price, lastPrice });
 };
 
 const add = async (req, res) => {
@@ -33,13 +92,13 @@ const add = async (req, res) => {
 				priceHandler,
 			};
 
-			const ids = await trx('products').insert(product);
+			const ids = await trx('products').returning('id').insert(product);
 			const product_id = ids[0];
-			console.log(ids);
+			console.log({ product_id });
 
 			return res.json({ product: product_id });
-		} catch (err) {
-			return res.json({ error: err });
+		} catch (error) {
+			return res.json({ error });
 		}
 	});
 };
@@ -47,5 +106,6 @@ const add = async (req, res) => {
 module.exports = {
 	add,
 	show,
-	getPriceHandler,
+	index,
+	getprice,
 };
