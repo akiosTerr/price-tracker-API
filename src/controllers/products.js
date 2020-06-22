@@ -1,13 +1,15 @@
 const knex = require('../database/connection');
 const ClapScrap = require('../lib/ClapScrap');
 
-const CS = new ClapScrap(require('../data/UA.json').userAgent);
+const CS = new ClapScrap(require('../lib/UA.json').userAgent);
 
 const index = async (req, res) => {
 	const products = await knex('products').select('*');
 
 	return res.json(products);
 };
+
+// todo: external API call to fetch text from query params
 
 const show = async (req, res) => {
 	const { id } = req.params;
