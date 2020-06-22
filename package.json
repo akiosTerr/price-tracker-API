@@ -7,7 +7,7 @@
   "author": "akiosTerr",
   "license": "MIT",
   "scripts": {
-    "start": "node src/app.js",
+    "start": "node src/server.js",
     "dev": "nodemon src/app.js",
     "srv": "nodemon src/server.js",
     "knex:migrate": "knex --knexfile knexfile.js migrate:latest",

@@ -16,12 +16,11 @@ const show = async (req, res) => {
 	const data = await knex('price_record')
 		.where('product_id', id)
 		.orderBy('createdAt', 'desc')
-		.limit(2);
-
-	console.log(data);
+		.limit(2)
+		.select('price');
 
 	if (data.length < 1) {
-		return res.status(400).json({ error: 'product not found' });
+		return res.status(400).json({ error: 'product has no price tags' });
 	}
 
 	return res.json(data);
@@ -54,33 +53,34 @@ const getprice = async (req, res) => {
 		return res.json({ error: 'element not found' });
 	}
 
-	const price_record_item = await trx('price_record')
+	const priceRecord = await trx('price_record')
 		.where('product_id', id)
 		.orderBy('createdAt', 'desc')
-		.first()
-		.select('price');
+		.limit(2)
+		.select('price', 'id');
 
-	if (!price_record_item) {
+	if (priceRecord.length < 1) {
 		console.log('empty price list, posting first price...');
 		const new_price = { product_id: id, price: currentPrice };
-		console.log(new_price);
 		await trx('price_record').insert(new_price);
 		trx.commit();
-		return res.json(new_price);
+		console.log('==end==');
+		return res.json({ newPrice: currentPrice });
 	}
 
-	const lastPrice = price_record_item.price;
+	const [lastPrice, previousPrice] = priceRecord;
 
-	if (lastPrice !== currentPrice) {
+	if (lastPrice.price !== currentPrice) {
 		console.log('price is different, posting new price...');
 		const new_price = { product_id: id, price: currentPrice };
-		console.log(new_price);
 		await trx('price_record').insert(new_price);
 		trx.commit();
-		return res.json({ newPrice: new_price.price });
+		console.log('==end==');
+		return res.json({ newPrice: currentPrice, lastPrice: lastPrice.price });
 	}
-	console.log({ lastPrice, price: currentPrice });
-	return res.json({ currentPrice, lastPrice });
+
+	console.log('(no price changes)');
+	return res.json({ currentPrice: lastPrice, previousPrice });
 };
 
 const add = async (req, res) => {
@@ -101,6 +101,7 @@ const add = async (req, res) => {
 
 			return res.json({ product: product_id });
 		} catch (error) {
+			console.error(error);
 			return res.json({ error });
 		}
 	});
