@@ -12,12 +12,15 @@ const index = async (req, res) => {
 const show = async (req, res) => {
 	const { id } = req.params;
 
-	const data = await knex('products')
-		.select('priceHandler', 'link')
-		.where('id', id)
-		.first();
+	//get last two price tags
+	const data = await knex('price_record')
+		.where('product_id', id)
+		.orderBy('createdAt', 'desc')
+		.limit(2);
 
-	if (!data) {
+	console.log(data);
+
+	if (data.length < 1) {
 		return res.status(400).json({ error: 'product not found' });
 	}
 
@@ -45,9 +48,9 @@ const getprice = async (req, res) => {
 		return res.json({ 'http request error': status });
 	}
 
-	const price = await CS.getText(page, data.priceHandler);
+	const currentPrice = await CS.getText(page, data.priceHandler);
 
-	if (!price) {
+	if (!currentPrice) {
 		return res.json({ error: 'element not found' });
 	}
 
@@ -59,7 +62,7 @@ const getprice = async (req, res) => {
 
 	if (!price_record_item) {
 		console.log('empty price list, posting first price...');
-		const new_price = { product_id: id, price };
+		const new_price = { product_id: id, price: currentPrice };
 		console.log(new_price);
 		await trx('price_record').insert(new_price);
 		trx.commit();
@@ -68,16 +71,16 @@ const getprice = async (req, res) => {
 
 	const lastPrice = price_record_item.price;
 
-	if (lastPrice !== price) {
+	if (lastPrice !== currentPrice) {
 		console.log('price is different, posting new price...');
-		const new_price = { product_id: id, price };
+		const new_price = { product_id: id, price: currentPrice };
 		console.log(new_price);
 		await trx('price_record').insert(new_price);
 		trx.commit();
-		return res.json(new_price);
+		return res.json({ newPrice: new_price.price });
 	}
-	console.log({ lastPrice, price });
-	return res.json({ price, lastPrice });
+	console.log({ lastPrice, price: currentPrice });
+	return res.json({ currentPrice, lastPrice });
 };
 
 const add = async (req, res) => {
