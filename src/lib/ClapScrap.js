@@ -11,7 +11,7 @@ ClapScrap.prototype = {
 	launchBot: async (url, headless = true) => {
 		const browser = await puppeter.launch({
 			headless: headless,
-			args: [`--user-agent=${this.UA}`],
+			args: [`--user-agent=${this.UA}`, '--no-sandbox'],
 		});
 		const page = await browser.newPage();
 		const response = await page.goto(url);
