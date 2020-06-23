@@ -5,18 +5,31 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = {
-	client: 'pg',
-	connection: {
-		host: process.env.PG_HOST,
-		user: process.env.PG_USER,
-		password: process.env.PG_PASSWORD,
-		database: process.env.PG_USER,
+	development: {
+		client: 'pg',
+		connection: {
+			host: process.env.PG_HOST,
+			user: process.env.PG_USER,
+			password: process.env.PG_PASSWORD,
+			database: process.env.PG_USER,
+		},
+		migrations: {
+			directory: path.resolve(__dirname, 'src', 'database', 'migrations'),
+		},
+		seeds: {
+			directory: path.resolve(__dirname, 'src', 'database', 'seeds'),
+		},
+		useNullAsDefault: true,
 	},
-	migrations: {
-		directory: path.resolve(__dirname, 'src', 'database', 'migrations'),
+	production: {
+		client: 'pg',
+		connection: process.env.DATABASE_URL,
+		migrations: {
+			directory: path.resolve(__dirname, 'src', 'database', 'migrations'),
+		},
+		seeds: {
+			directory: path.resolve(__dirname, 'src', 'database', 'seeds'),
+		},
+		useNullAsDefault: true,
 	},
-	seeds: {
-		directory: path.resolve(__dirname, 'src', 'database', 'seeds'),
-	},
-	useNullAsDefault: true,
 };
