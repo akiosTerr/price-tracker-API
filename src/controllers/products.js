@@ -4,9 +4,34 @@ const ClapScrap = require('../lib/ClapScrap');
 const CS = new ClapScrap(require('../lib/UA.json').userAgent);
 
 const index = async (req, res) => {
-	const products = await knex('products').select('*');
+	const trx = await knex.transaction();
 
-	return res.json(products);
+	const products = await trx('products').select(
+		'id',
+		'title',
+		'link',
+		'imageURL'
+	);
+	const pricetags = await trx('price_record')
+		.orderBy('createdAt', 'desc')
+		.select('*');
+
+	// probably not a good way to do this
+	// maybe I can do this better with SQL QUERY
+	// using join or something
+	const serializedItems = products.map((product) => {
+		const raw_pricetags = pricetags.filter((price) => {
+			return price.product_id === product.id;
+		});
+		const [current, previous] = raw_pricetags;
+
+		if (current !== undefined) product.current_pricetag = current.price;
+		if (previous !== undefined) product.previous_pricetag = previous.price;
+
+		return product;
+	});
+
+	return res.json({ serializedItems });
 };
 
 // todo: external API call to fetch text from query params
