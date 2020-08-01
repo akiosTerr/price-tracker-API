@@ -1,5 +1,5 @@
 # price-tracker-API
-An API for fetching product prices & other data from e-commerce websites
+An API for fetching product prices & other data from e-commerce websites.
 For now, you just need to provide a element handler of the price text (class or ID) 
 along with the website link, so the web scrapper can fetch the prices from the website you choose.
 
