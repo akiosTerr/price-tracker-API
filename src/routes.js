@@ -2,6 +2,7 @@ const router = require('express').Router();
 const productsController = require('./controllers/products');
 // const knex = require('./database/connection');
 
+router.get('/products/test', productsController.test);
 router.get('/products', productsController.index);
 router.get('/products/:id', productsController.show);
 router.get('/products/:id/getPrice', productsController.getprice);

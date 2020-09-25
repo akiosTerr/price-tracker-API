@@ -20,6 +20,7 @@ module.exports = {
 			directory: path.resolve(__dirname, 'src', 'database', 'seeds'),
 		},
 		useNullAsDefault: true,
+		pool: { min: 0, max: 3 },
 	},
 	production: {
 		client: 'pg',
@@ -31,5 +32,15 @@ module.exports = {
 			directory: path.resolve(__dirname, 'src', 'database', 'seeds'),
 		},
 		useNullAsDefault: true,
+		pool: {
+			min: 0,
+			max: 3,
+			createTimeoutMillis: 3000,
+			acquireTimeoutMillis: 30000,
+			idleTimeoutMillis: 30000,
+			reapIntervalMillis: 1000,
+			createRetryIntervalMillis: 100,
+			propagateCreateError: false,
+		},
 	},
 };

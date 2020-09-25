@@ -3,6 +3,16 @@ const ClapScrap = require('../lib/ClapScrap');
 
 const CS = new ClapScrap(require('../lib/UA.json').userAgent);
 
+const test = async (req, res) => {
+	const trx = await knex.transaction();
+
+	const products = await trx('price_record')
+		.innerJoin('products', 'price_record.product_id', '=', 'products.id')
+		.select('product_id', 'price', 'title', 'link');
+
+	return res.json(products);
+};
+
 const index = async (req, res) => {
 	const trx = await knex.transaction();
 
@@ -15,6 +25,8 @@ const index = async (req, res) => {
 	const pricetags = await trx('price_record')
 		.orderBy('createdAt', 'desc')
 		.select('*');
+
+	console.log(products);
 
 	// probably not a good way to do this
 	// maybe I can do this better with SQL QUERY
@@ -31,7 +43,7 @@ const index = async (req, res) => {
 		return product;
 	});
 
-	return res.json({ serializedItems });
+	return res.json(serializedItems);
 };
 
 // todo: external API call to fetch text from query params
@@ -139,4 +151,5 @@ module.exports = {
 	show,
 	index,
 	getprice,
+	test,
 };
