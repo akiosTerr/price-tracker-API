@@ -4,9 +4,8 @@ const ClapScrap = require('../lib/ClapScrap');
 const CS = new ClapScrap(require('../lib/UA.json').userAgent);
 
 const test = async (req, res) => {
-	const trx = await knex.transaction();
-
-	const products = await trx('price_record')
+	console.log('test query');
+	const products = await knex('price_record')
 		.innerJoin('products', 'price_record.product_id', '=', 'products.id')
 		.select('product_id', 'price', 'title', 'link');
 
@@ -14,19 +13,17 @@ const test = async (req, res) => {
 };
 
 const index = async (req, res) => {
-	const trx = await knex.transaction();
-
-	const products = await trx('products').select(
+	const products = await knex('products').select(
 		'id',
 		'title',
 		'link',
 		'imageURL'
 	);
-	const pricetags = await trx('price_record')
+	const pricetags = await knex('price_record')
 		.orderBy('createdAt', 'desc')
 		.select('*');
 
-	console.log(products);
+	console.log('products query');
 
 	// probably not a good way to do this
 	// maybe I can do this better with SQL QUERY
@@ -86,7 +83,17 @@ const getprice = async (req, res) => {
 		return res.json({ 'http request error': status });
 	}
 
-	const currentPrice = await CS.getText(page, data.priceHandler);
+	// const currentPrice = await CS.getText(page, data.priceHandler);
+	let currentPrice = null;
+	CS.getText(page, data.priceHandler)
+		.then((data) => {
+			console.log(data);
+			currentPrice = data;
+		})
+		.catch((err) => {
+			console.log(err);
+			return res.json({ err });
+		});
 
 	if (!currentPrice) {
 		return res.json({ error: 'element not found' });
@@ -104,7 +111,7 @@ const getprice = async (req, res) => {
 		await trx('price_record').insert(new_price);
 		trx.commit();
 		console.log('==end==');
-		return res.json({ newPrice: currentPrice });
+		return res.json({ priceChange: true, newPrice: currentPrice });
 	}
 
 	const [lastPrice, previousPrice] = priceRecord;
@@ -115,11 +122,19 @@ const getprice = async (req, res) => {
 		await trx('price_record').insert(new_price);
 		trx.commit();
 		console.log('==end==');
-		return res.json({ newPrice: currentPrice, lastPrice: lastPrice.price });
+		return res.json({
+			priceChange: true,
+			newPrice: currentPrice,
+			lastPrice: lastPrice.price,
+		});
 	}
 
 	console.log('(no price changes)');
-	return res.json({ currentPrice: lastPrice, previousPrice });
+	return res.json({
+		priceChange: false,
+		currentPrice: lastPrice,
+		previousPrice,
+	});
 };
 
 const add = async (req, res) => {

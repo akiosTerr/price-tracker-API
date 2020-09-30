@@ -8,12 +8,13 @@
   "license": "MIT",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/app.js",
-    "srv": "nodemon src/server.js",
+    "serve": "nodemon src/server.js",
     "knex:migrate": "knex --knexfile knexfile.js migrate:latest",
-    "knex:seed": "knex --knexfile knexfile.ts seed:run"
+    "knex:seed": "knex --knexfile knexfile.ts seed:run",
+    "knex:rollback": "knex migrate:rollback"
   },
   "dependencies": {
+    "bcrypt": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
