@@ -83,20 +83,22 @@ const getprice = async (req, res) => {
 		return res.json({ 'http request error': status });
 	}
 
-	// const currentPrice = await CS.getText(page, data.priceHandler);
-	let currentPrice = null;
-	CS.getText(page, data.priceHandler)
-		.then((data) => {
-			console.log(data);
-			currentPrice = data;
-		})
-		.catch((err) => {
-			console.log(err);
-			return res.json({ err });
-		});
+	const currentPrice = await CS.getText(page, data.priceHandler);
 
-	if (!currentPrice) {
-		return res.json({ error: 'element not found' });
+	// CS.getText(page, data.priceHandler)
+	// 	.then((data) => {
+	// 		console.log(data);
+	// 		currentPrice = data;
+	// 	})
+	// 	.catch((err) => {
+	// 		console.log(err);
+	// 		return res.json({ err });
+	// 	});
+
+	//todo: build a better error logger
+
+	if (currentPrice.status === 0) {
+		return res.json({ error: currentPrice.payload });
 	}
 
 	const priceRecord = await trx('price_record')
@@ -107,24 +109,24 @@ const getprice = async (req, res) => {
 
 	if (priceRecord.length < 1) {
 		console.log('empty price list, posting first price...');
-		const new_price = { product_id: id, price: currentPrice };
+		const new_price = { product_id: id, price: currentPrice.payload };
 		await trx('price_record').insert(new_price);
 		trx.commit();
 		console.log('==end==');
-		return res.json({ priceChange: true, newPrice: currentPrice });
+		return res.json({ priceChange: true, newPrice: currentPrice.payload });
 	}
 
 	const [lastPrice, previousPrice] = priceRecord;
 
-	if (lastPrice.price !== currentPrice) {
+	if (lastPrice.price !== currentPrice.payload) {
 		console.log('price is different, posting new price...');
-		const new_price = { product_id: id, price: currentPrice };
+		const new_price = { product_id: id, price: currentPrice.payload };
 		await trx('price_record').insert(new_price);
 		trx.commit();
 		console.log('==end==');
 		return res.json({
 			priceChange: true,
-			newPrice: currentPrice,
+			newPrice: currentPrice.payload,
 			lastPrice: lastPrice.price,
 		});
 	}

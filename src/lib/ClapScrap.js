@@ -30,8 +30,17 @@ ClapScrap.prototype = {
 		const property = await page.evaluate((el) => el.textContent, elHandle);
 		return property;
 	},
+	//todo: push this superior error validation method
+	//better yet, create a even more superior error validation method
 	getText: async (page, handler) => {
-		const text = await page.$eval(handler, (e) => e.innerText);
+		const text = page
+			.$eval(handler, (e) => e.innerText)
+			.then((data) => {
+				return { status: 1, payload: data };
+			})
+			.catch((err) => {
+				return { status: 0, payload: err };
+			});
 		return text;
 	},
 	getTexts: async (page, handlers) => {
