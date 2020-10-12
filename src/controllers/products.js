@@ -1,5 +1,5 @@
 const knex = require('../database/connection');
-const ClapScrap = require('../../modules/clapScrap/src/app');
+const ClapScrap = require('../../modules/clapScrap/src/ClapScrap');
 
 const CS = new ClapScrap(require('../lib/UA.json').userAgent);
 
@@ -86,9 +86,9 @@ const getprice = async (req, res) => {
 	const currentPrice = await CS.getText(page, data.priceHandler);
 
 	//todo: build a better error logger
-
 	if (currentPrice.status === 0) {
-		return res.json(currentPrice.payload);
+		const errorMessage = String(currentPrice.payload);
+		return res.json({ status: 0, errorData: errorMessage });
 	}
 
 	const priceRecord = await trx('price_record')
@@ -102,7 +102,11 @@ const getprice = async (req, res) => {
 		const new_price = { product_id: id, price: currentPrice.payload };
 		await trx('price_record').insert(new_price);
 		trx.commit();
-		return res.json({ priceChange: true, newPrice: currentPrice.payload });
+		return res.json({
+			status: 1,
+			priceChange: true,
+			newPrice: currentPrice.payload,
+		});
 	}
 
 	const [lastPrice] = priceRecord;
@@ -113,6 +117,7 @@ const getprice = async (req, res) => {
 		await trx('price_record').insert(new_price);
 		trx.commit();
 		return res.json({
+			status: 1,
 			priceChange: true,
 			newPrice: currentPrice.payload,
 			lastPrice: lastPrice.price,
@@ -121,6 +126,7 @@ const getprice = async (req, res) => {
 
 	console.log('(no price changes)');
 	return res.json({
+		status: 1,
 		priceChange: false,
 	});
 };
