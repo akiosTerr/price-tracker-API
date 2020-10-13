@@ -1,5 +1,6 @@
 const knex = require('../database/connection');
 const ClapScrap = require('../../modules/clapScrap/src/ClapScrap');
+const { convertToFloat } = require('../utils/utils');
 
 const CS = new ClapScrap(require('../lib/UA.json').userAgent);
 
@@ -19,7 +20,7 @@ const index = async (req, res) => {
 		'link',
 		'imageURL'
 	);
-	const pricetags = await knex('price_record')
+	const pricetags = await knex('price_store')
 		.orderBy('createdAt', 'desc')
 		.select('*');
 
@@ -91,36 +92,38 @@ const getprice = async (req, res) => {
 		return res.json({ status: 0, errorData: errorMessage });
 	}
 
-	const priceRecord = await trx('price_record')
+	const [formatedPrice] = convertToFloat([currentPrice.payload]);
+
+	const priceRecord = await trx('price_store')
 		.where('product_id', id)
 		.orderBy('createdAt', 'desc')
-		.limit(2)
-		.select('price', 'id');
+		.select('price', 'id')
+		.first();
 
 	if (priceRecord.length < 1) {
 		console.log('empty price list, posting first price...');
-		const new_price = { product_id: id, price: currentPrice.payload };
-		await trx('price_record').insert(new_price);
+		const new_price = { product_id: id, price: formatedPrice };
+		await trx('price_store').insert(new_price);
 		trx.commit();
 		return res.json({
 			status: 1,
 			priceChange: true,
-			newPrice: currentPrice.payload,
+			newPrice: formatedPrice,
 		});
 	}
 
-	const [lastPrice] = priceRecord;
-
-	if (lastPrice.price !== currentPrice.payload) {
+	const lastPrice = Number(priceRecord.price);
+	console.log(lastPrice, formatedPrice);
+	if (lastPrice !== formatedPrice) {
 		console.log('price is different, posting new price...');
-		const new_price = { product_id: id, price: currentPrice.payload };
+		const new_price = { product_id: id, price: formatedPrice };
 		await trx('price_record').insert(new_price);
 		trx.commit();
 		return res.json({
 			status: 1,
 			priceChange: true,
-			newPrice: currentPrice.payload,
-			lastPrice: lastPrice.price,
+			newPrice: formatedPrice,
+			lastPrice: lastPrice,
 		});
 	}
 
@@ -129,6 +132,14 @@ const getprice = async (req, res) => {
 		status: 1,
 		priceChange: false,
 	});
+};
+
+const remove = async (req, res) => {
+	const { id } = req.params;
+
+	const products = await knex('products').where('id', id).del().returning('*');
+
+	return res.json({ status: 'deleted', item: products });
 };
 
 const add = async (req, res) => {
@@ -157,6 +168,7 @@ const add = async (req, res) => {
 
 module.exports = {
 	add,
+	remove,
 	show,
 	index,
 	getprice,

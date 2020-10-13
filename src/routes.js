@@ -8,6 +8,7 @@ router.get('/products', productsController.index);
 router.get('/products/:id', productsController.show);
 router.get('/products/:id/getPrice', productsController.getprice);
 router.post('/products', productsController.add);
+router.delete('/products/:id', productsController.remove);
 
 router.post('/users', usersController.add);
 router.post('/users/auth', usersController.login);
