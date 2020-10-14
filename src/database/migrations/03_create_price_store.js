@@ -10,7 +10,6 @@ async function up(knex) {
 			.notNullable();
 		table.string('price').notNullable();
 		table.timestamp('createdAt').defaultTo(knex.fn.now());
-		table.timestamp('updatedAt');
 	});
 }
 
